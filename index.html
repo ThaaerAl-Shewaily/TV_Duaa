@@ -3,139 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دعاء كميل - شاشة LG</title>
+    <title>دعاء كميل - شاشة كاملة</title>
     <style>
-        body {
-            margin: 0; padding: 0; background-color: #000000; color: #d4af37;
-            font-family: 'Arial', sans-serif; height: 100vh;
-            display: flex; flex-direction: column; overflow: hidden;
+        body { 
+            margin: 0; padding: 0; background-color: #000; color: #d4af37; 
+            font-family: Arial, sans-serif; overflow: hidden; height: 100vh; 
+            display: flex; flex-direction: column; 
         }
-        #display-panel {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            text-align: center; padding: 20px;
+        #overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; z-index: 1000; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
         }
-        #lyrics-text {
-            font-size: 5rem; font-weight: bold; line-height: 1.4;
-            text-shadow: 0px 4px 10px rgba(212, 175, 55, 0.3); transition: opacity 0.3s;
+        #start-btn { 
+            padding: 30px 80px; font-size: 3rem; background: #1a4d2e; color: white; 
+            border: 3px solid #d4af37; border-radius: 20px; cursor: pointer; outline: none; 
+            transition: 0.2s; 
         }
-        #controls-container {
-            background: #111; padding: 20px; border-top: 2px solid #333; display: flex; justify-content: center;
+        #start-btn:focus, #start-btn.active-focus { 
+            background: #2d824d; box-shadow: 0 0 40px #d4af37; transform: scale(1.1); 
         }
-        audio { width: 90%; height: 50px; }
-        
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+        #display-panel { 
+            flex: 1; display: flex; align-items: center; justify-content: center; 
+            text-align: center; padding: 20px; 
         }
-        #start-button {
-            padding: 25px 60px; font-size: 2.5rem; background: #1a4d2e; color: white;
-            border: 2px solid #d4af37; border-radius: 15px; cursor: pointer;
-            outline: none;
+        #lyrics-text { 
+            font-size: 5rem; font-weight: bold; line-height: 1.5; transition: opacity 0.2s; 
         }
-        /* تأثير واضح جداً لما تحدد الزر بالريموت */
-        #start-button:focus, #start-button.active-focus { 
-            background: #2d824d; 
-            box-shadow: 0 0 30px #d4af37; 
-            transform: scale(1.1);
-            transition: all 0.2s;
+        #controls { 
+            background: #111; padding: 20px; display: flex; justify-content: center; 
+            border-top: 2px solid #333; 
         }
+        audio { width: 90%; height: 60px; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <h1 style="color: #d4af37; font-size: 3.5rem; margin-bottom: 40px;">دعاء كُميل بن زياد</h1>
-    <button id="start-button" tabindex="0">تشغيل (OK)</button>
-    <p style="color: #666; font-size: 1.5rem; margin-top: 20px;">اضغط زر OK في الريموت كونترول</p>
+    <h1 style="color: #d4af37; font-size: 4rem; margin-bottom: 50px;">دعاء كُميل بن زياد</h1>
+    <button id="start-btn" tabindex="0">بدء الدعاء (OK)</button>
+    <p style="color: #888; font-size: 1.5rem; margin-top: 20px;">اضغط OK للتشغيل بوضع الشاشة الكاملة</p>
 </div>
 
 <div id="display-panel">
     <div id="lyrics-text">جاري التحميل...</div>
 </div>
 
-<div id="controls-container">
+<div id="controls">
     <audio id="audio-player" controls>
         <source src="audio.mp3" type="audio/mpeg">
     </audio>
 </div>
 
 <script>
-    // 1. ضع كل النص الأصلي (SRT) هنا بالضبط كما هو في ملفك الأصلي
-    var srtContent = `
-1
-00:00:00,000 --> 00:00:08,000
-بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ
+    // أستاذ ثائر: انسخ مصفوفة التوقيتات من ملفك الأصلي وضعها هنا
+    // تحذير: استخدم var فقط، ولا تستخدم const أو let أبداً لتجنب الشاشة البيضاء
+    var lyricsArray = [
+        { start: 0, end: 5, text: "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ" },
+        { start: 5, end: 12, text: "اللّهمَّ صلِّ على محمَّد وآل محمَّد" }
+        // ... الصق بقية الأسطر هنا
+    ];
 
-2
-00:00:08,500 --> 00:00:18,110
-اللّهمَّ صلِّ على محمَّد وآل محمَّد
-
-`;
-
-    // 2. دالة تحويل الوقت إلى ثواني
-    function toSec(t) {
-        var a = t.split(':'); 
-        var s = a[2].split(',');
-        return (Number(a[0]) * 3600) + (Number(a[1]) * 60) + Number(s[0]) + (Number(s[1]) / 1000);
-    }
-
-    // 3. تحويل نص الـ SRT إلى مصفوفة بيانات
-    var cleanedSrt = srtContent.replace(/\r\n/g, '\n');
-    var lines = cleanedSrt.trim().split('\n\n');
-    var lyricsArray = [];
-    
-    for(var i = 0; i < lines.length; i++) {
-        var block = lines[i];
-        if(!block) continue;
-        var parts = block.split('\n');
-        
-        if(parts.length >= 3) {
-            var timeParts = parts[1].split(' --> ');
-            if(timeParts.length === 2) {
-                var textParts = [];
-                for(var j = 2; j < parts.length; j++) {
-                    textParts.push(parts[j]);
-                }
-                lyricsArray.push({
-                    start: toSec(timeParts[0]),
-                    end: toSec(timeParts[1]),
-                    text: textParts.join(' ')
-                });
-            }
-        }
-    }
-
-    // 4. التحكم بالصوت والنصوص
     var audio = document.getElementById('audio-player');
     var textDiv = document.getElementById('lyrics-text');
-    var startBtn = document.getElementById('start-button');
+    var startBtn = document.getElementById('start-btn');
     var overlay = document.getElementById('overlay');
     var isStarted = false;
 
-    if (lyricsArray.length > 0) {
-        textDiv.innerText = lyricsArray[0].text;
+    // دالة تفعيل الشاشة الكاملة (متوافقة مع متصفحات التلفزيون القديمة)
+    function openFullscreen() {
+        var elem = document.documentElement;
+        if (elem.requestFullscreen) { 
+            elem.requestFullscreen(); 
+        } else if (elem.webkitRequestFullscreen) { 
+            elem.webkitRequestFullscreen(); // Safari / Chrome / LG webOS
+        } else if (elem.mozRequestFullScreen) { 
+            elem.mozRequestFullScreen(); 
+        } else if (elem.msRequestFullscreen) { 
+            elem.msRequestFullscreen(); 
+        }
     }
 
-    // دالة التشغيل الرئيسية
+    // دالة بدء التشغيل
     function startApp() {
         if (isStarted) return;
         isStarted = true;
-        overlay.style.display = 'none';
-        audio.play();
+        
+        openFullscreen(); // تفعيل وضع الشاشة الكاملة أولاً
+        overlay.style.display = 'none'; // إخفاء واجهة البدء
+        audio.play(); // تشغيل الصوت
     }
 
-    // لقط ضغطة الماوس أو الماجيك ريموت
-    startBtn.addEventListener('click', startApp);
+    // لقط ضغطة الماوس
+    startBtn.onclick = startApp;
 
-    // لقط ضغطة زر OK أو Enter من الريموت العادي
+    // لقط ضغطة زر OK من الريموت (زر رقم 13)
     document.addEventListener('keydown', function(event) {
-        // رقم 13 هو كود زر OK / Enter في ريموت شاشات LG
         if (event.keyCode === 13) {
             startApp();
         }
     });
 
+    // تحديث النص مع الصوت
     audio.ontimeupdate = function() {
         var currentTime = audio.currentTime;
         var activeText = "";
@@ -152,11 +121,11 @@
             setTimeout(function() {
                 textDiv.innerText = activeText;
                 textDiv.style.opacity = 1;
-            }, 150);
+            }, 100);
         }
     };
 
-    // إجبار المتصفح يخلي الزر مفعل (Focus) أول ما تفتح الصفحة
+    // إعطاء التركيز للزر عند فتح الصفحة
     window.onload = function() {
         startBtn.focus();
         startBtn.classList.add('active-focus');
