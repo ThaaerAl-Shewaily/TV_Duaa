@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دعاء كميل - نسخة التلفزيون الذكي</title>
+    <style>
+        /* ألوان مريحة للعين: خلفية رمادية داكنة جداً مع نص عاجي */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212; 
+            color: #E0E0E0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* حاوية النص: كبيرة وواضحة */
+        #content-area {
+            width: 90%;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #dua-text {
+            font-size: 4.5rem; /* خط كبير جداً يتناسب مع حجم التلفزيون */
+            font-weight: bold;
+            line-height: 1.5;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+            transition: opacity 0.4s;
+        }
+
+        /* شريط التقدم أسفل الشاشة */
+        #progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: #222;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #007AFF; /* لون أزرق هادئ للتقدم */
+            transition: width 0.1s linear;
+        }
+
+        /* واجهة البدء لتجاوز قيود المتصفح */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #121212;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .play-button {
+            padding: 25px 60px;
+            font-size: 2.5rem;
+            background-color: #1a4d2e; /* أخضر غامق مريح */
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .play-button:focus {
+            background-color: #2d824d;
+            outline: 5px solid #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1 style="margin-bottom: 40px; font-size: 3rem;">دعاء كميل بن زياد</h1>
+        <button class="play-button" id="btnPlay" autofocus>تشغيل الدعاء (OK)</button>
+        <p style="margin-top: 30px; color: #888; font-size: 1.5rem;">اضغط على زر الإدخال في الريموت للبدء</p>
+    </div>
+
+    <div id="content-area">
+        <div id="dua-text">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+    </div>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
+    <audio id="mainAudio">
+        <source src="audio.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // مصفوفة النصوص مع التوقيتات (بالثواني)
+        // ملاحظة: قمت بتبسيط الهيكلية لضمان عملها على متصفح LG القديم
+        var lyrics = [
+            { time: 0, text: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ" },
+            { time: 5, text: "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِرَحْمَتِكَ الَّتِي وَسِعَتْ كُلَّ شَيْءٍ" },
+            { time: 12, text: "وَبِقُوَّتِكَ الَّتِي قَهَرْتَ بِهَا كُلَّ شَيْءٍ" },
+            { time: 18, text: "وَخَضَعَ لَهَا كُلُّ شَيْءٍ" },
+            { time: 22, text: "وَذَلَّ لَهَا كُلُّ شَيْءٍ" }
+            // يمكنك إضافة بقية المقاطع هنا بنفس النمط
+        ];
+
+        var audio = document.getElementById('mainAudio');
+        var textDisplay = document.getElementById('dua-text');
+        var progressBar = document.getElementById('progress-bar');
+        var startScreen = document.getElementById('start-screen');
+        var btnPlay = document.getElementById('btnPlay');
+
+        // دالة البدء
+        btnPlay.onclick = function() {
+            startScreen.style.display = 'none';
+            audio.play();
+        };
+
+        // مراقبة وقت الصوت لتحديث النص والشريط
+        audio.ontimeupdate = function() {
+            var currentTime = audio.currentTime;
+            
+            // تحديث شريط التقدم
+            if (audio.duration) {
+                var percent = (currentTime / audio.duration) * 100;
+                progressBar.style.width = percent + "%";
+            }
+
+            // البحث عن النص المناسب للوقت الحالي
+            var currentText = "";
+            for (var i = 0; i < lyrics.length; i++) {
+                if (currentTime >= lyrics[i].time) {
+                    currentText = lyrics[i].text;
+                }
+            }
+
+            // تحديث النص إذا تغير فقط لتجنب الرمش (Flickering)
+            if (textDisplay.innerText !== currentText && currentText !== "") {
+                textDisplay.style.opacity = 0;
+                setTimeout(function() {
+                    textDisplay.innerText = currentText;
+                    textDisplay.style.opacity = 1;
+                }, 200);
+            }
+        };
+
+        // التأكد من فوكس الزر للريموت
+        window.onload = function() {
+            btnPlay.focus();
+        };
+    </script>
+</body>
+</html>
