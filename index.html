@@ -27,8 +27,10 @@
             flex: 1; display: flex; align-items: center; justify-content: center; 
             text-align: center; padding: 20px; 
         }
+        /* الخط كبرته جداً حتى الكلمة تبين واضحة بنص الشاشة */
         #lyrics-text { 
-            font-size: 5rem; font-weight: bold; line-height: 1.5; transition: opacity 0.2s; 
+            font-size: 8rem; font-weight: bold; line-height: 1.5;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
         }
         #controls { 
             background: #111; padding: 20px; display: flex; justify-content: center; 
@@ -55,56 +57,94 @@
     </audio>
 </div>
 
-<script>
-    // أستاذ ثائر: انسخ مصفوفة التوقيتات من ملفك الأصلي وضعها هنا
-    // تحذير: استخدم var فقط، ولا تستخدم const أو let أبداً لتجنب الشاشة البيضاء
-    var lyricsArray = [
-        { start: 0, end: 5, text: "بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ" },
-        { start: 5, end: 12, text: "اللّهمَّ صلِّ على محمَّد وآل محمَّد" }
-        // ... الصق بقية الأسطر هنا
-    ];
+<textarea id="srt-data" style="display:none;">
+1
+00:00:00,000 --> 00:00:08,000
+بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ
 
+2
+00:00:08,500 --> 00:00:18,110
+اللّهمَّ صلِّ على محمَّد وآل محمَّد
+
+11
+00:00:18,560 --> 00:00:19,970
+اللّهمَّ
+
+12
+00:00:19,970 --> 00:00:20,750
+إنّي
+
+13
+00:00:20,750 --> 00:00:21,730
+أَسأَلك
+
+</textarea>
+
+<script>
+    // دالة تحويل الوقت إلى ثواني
+    function toSec(timeString) {
+        var a = timeString.split(':'); 
+        var s = a[2].split(',');
+        return (Number(a[0]) * 3600) + (Number(a[1]) * 60) + Number(s[0]) + (Number(s[1]) / 1000);
+    }
+
+    // سحب البيانات من الحقل المخفي وتجهيزها
+    var rawText = document.getElementById('srt-data').value;
+    var cleanedSrt = rawText.replace(/\r\n/g, '\n');
+    var blocks = cleanedSrt.split(/\n\s*\n/); // تقسيم النص عند كل سطر فارغ
+    var lyricsArray = [];
+    
+    // المترجم (Parser) لتحويل النص إلى مصفوفة يفهمها التلفزيون
+    for(var i = 0; i < blocks.length; i++) {
+        var block = blocks[i].trim();
+        if(!block) continue;
+        
+        var parts = block.split('\n');
+        if(parts.length >= 3) {
+            var timeParts = parts[1].split(' --> ');
+            if(timeParts.length === 2) {
+                var textParts = [];
+                for(var j = 2; j < parts.length; j++) {
+                    textParts.push(parts[j].trim());
+                }
+                lyricsArray.push({
+                    start: toSec(timeParts[0].trim()),
+                    end: toSec(timeParts[1].trim()),
+                    text: textParts.join(' ')
+                });
+            }
+        }
+    }
+
+    // التشغيل والتحكم
     var audio = document.getElementById('audio-player');
     var textDiv = document.getElementById('lyrics-text');
     var startBtn = document.getElementById('start-btn');
     var overlay = document.getElementById('overlay');
     var isStarted = false;
 
-    // دالة تفعيل الشاشة الكاملة (متوافقة مع متصفحات التلفزيون القديمة)
     function openFullscreen() {
         var elem = document.documentElement;
-        if (elem.requestFullscreen) { 
-            elem.requestFullscreen(); 
-        } else if (elem.webkitRequestFullscreen) { 
-            elem.webkitRequestFullscreen(); // Safari / Chrome / LG webOS
-        } else if (elem.mozRequestFullScreen) { 
-            elem.mozRequestFullScreen(); 
-        } else if (elem.msRequestFullscreen) { 
-            elem.msRequestFullscreen(); 
-        }
+        if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
     }
 
-    // دالة بدء التشغيل
     function startApp() {
         if (isStarted) return;
         isStarted = true;
-        
-        openFullscreen(); // تفعيل وضع الشاشة الكاملة أولاً
-        overlay.style.display = 'none'; // إخفاء واجهة البدء
-        audio.play(); // تشغيل الصوت
+        openFullscreen();
+        overlay.style.display = 'none';
+        audio.play();
     }
 
-    // لقط ضغطة الماوس
     startBtn.onclick = startApp;
 
-    // لقط ضغطة زر OK من الريموت (زر رقم 13)
     document.addEventListener('keydown', function(event) {
-        if (event.keyCode === 13) {
-            startApp();
-        }
+        if (event.keyCode === 13) { startApp(); }
     });
 
-    // تحديث النص مع الصوت
+    // مزامنة النص مع الصوت 
+    // لغيت تأثير الاختفاء البطيء حتى الكلمات السريعة تظهر مباشرة بدون تقطيع
     audio.ontimeupdate = function() {
         var currentTime = audio.currentTime;
         var activeText = "";
@@ -116,16 +156,12 @@
             }
         }
 
+        // تحديث النص فوراً 
         if (activeText !== "" && textDiv.innerText !== activeText) {
-            textDiv.style.opacity = 0;
-            setTimeout(function() {
-                textDiv.innerText = activeText;
-                textDiv.style.opacity = 1;
-            }, 100);
+            textDiv.innerText = activeText;
         }
     };
 
-    // إعطاء التركيز للزر عند فتح الصفحة
     window.onload = function() {
         startBtn.focus();
         startBtn.classList.add('active-focus');
