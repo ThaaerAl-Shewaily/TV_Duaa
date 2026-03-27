@@ -3,52 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دعاء كميل - شاشة كاملة</title>
+    <title>دعاء كميل - نسخة التلفزيون</title>
     <style>
         body { 
-            margin: 0; padding: 0; background-color: #000; color: #d4af37; 
-            font-family: Arial, sans-serif; overflow: hidden; height: 100vh; 
-            display: flex; flex-direction: column; 
+            margin: 0; 
+            padding: 0; 
+            /* تعيين الصورة كخلفية ثابتة وتغطية الشاشة بالكامل */
+            background: url('BG.jpg') no-repeat center center fixed; 
+            background-size: cover;
+            color: #ffffff; 
+            font-family: Arial, sans-serif; 
+            overflow: hidden; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
         }
+
         #overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; z-index: 1000; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.9); 
+            z-index: 2000; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
         }
+
         #start-btn { 
-            padding: 30px 80px; font-size: 3rem; background: #1a4d2e; color: white; 
-            border: 3px solid #d4af37; border-radius: 20px; cursor: pointer; outline: none; 
-            transition: 0.2s; 
+            padding: 25px 70px; 
+            font-size: 3rem; 
+            background: #1a4d2e; 
+            color: white; 
+            border: 4px solid #d4af37; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            outline: none; 
+            transition: 0.3s; 
         }
-        #start-btn:focus, #start-btn.active-focus { 
-            background: #2d824d; box-shadow: 0 0 40px #d4af37; transform: scale(1.1); 
+
+        #start-btn:focus { 
+            background: #2d824d; 
+            box-shadow: 0 0 50px #d4af37; 
+            transform: scale(1.1); 
         }
+
+        /* حاوية العرض الوسطى لضمان بقاء النص في المنتصف دائماً */
         #display-panel { 
-            flex: 1; display: flex; align-items: center; justify-content: center; 
-            text-align: center; padding: 20px; 
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            padding-bottom: 0px; /* مسافة لعدم التداخل مع المشغل بالأسفل */
         }
-        /* الخط كبرته جداً حتى الكلمة تبين واضحة بنص الشاشة */
+
+        /* تنسيق النص: حجم ضخم ولون متناسق مع وضوح عالي لشاشة التلفزيون */
         #lyrics-text { 
-            font-size: 8rem; font-weight: bold; line-height: 1.5;
-            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            font-size: 5.5rem; /* حجم كبير جداً للتلفزيون */
+            font-weight: bold; 
+            color: #f1c40f; 
+            text-shadow: 5px 5px 15px rgba(0, 0, 0, 1), -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+            line-height: 1.3;
+            width: 90%;
+            transition: all 0.3s ease-in-out;
         }
+
+        /* تثبيت المشغل أسفل الشاشة بشكل دائم */
         #controls { 
-            background: #111; padding: 20px; display: flex; justify-content: center; 
-            border-top: 2px solid #333; 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7); 
+            padding: 30px 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            border-top: 2px solid rgba(212, 175, 55, 0.5);
+            z-index: 1000;
         }
-        audio { width: 90%; height: 60px; }
+
+        audio { 
+            width: 80%; 
+            height: 60px; /* ارتفاع أكبر لسهولة التحكم في التلفزيون */
+        }
     </style>
 </head>
 <body>
 
 <div id="overlay">
     <h1 style="color: #d4af37; font-size: 4rem; margin-bottom: 50px;">دعاء كُميل بن زياد</h1>
-    <button id="start-btn" tabindex="0">بدء الدعاء (OK)</button>
-    <p style="color: #888; font-size: 1.5rem; margin-top: 20px;">اضغط OK للتشغيل بوضع الشاشة الكاملة</p>
+    <button id="start-btn" autofocus>إضغط OK للبدء</button>
 </div>
 
 <div id="display-panel">
-    <div id="lyrics-text">جاري التحميل...</div>
+    <div id="lyrics-text">...</div>
 </div>
 
 <div id="controls">
@@ -4993,70 +5046,62 @@
 </textarea>
 
 <script>
-    // دالة تحويل الوقت إلى ثواني
-    function toSec(timeString) {
-        var a = timeString.split(':'); 
-        var s = a[2].split(',');
-        return (Number(a[0]) * 3600) + (Number(a[1]) * 60) + Number(s[0]) + (Number(s[1]) / 1000);
-    }
-
-    // سحب البيانات من الحقل المخفي وتجهيزها
-    var rawText = document.getElementById('srt-data').value;
-    var cleanedSrt = rawText.replace(/\r\n/g, '\n');
-    var blocks = cleanedSrt.split(/\n\s*\n/); // تقسيم النص عند كل سطر فارغ
-    var lyricsArray = [];
-    
-    // المترجم (Parser) لتحويل النص إلى مصفوفة يفهمها التلفزيون
-    for(var i = 0; i < blocks.length; i++) {
-        var block = blocks[i].trim();
-        if(!block) continue;
-        
-        var parts = block.split('\n');
-        if(parts.length >= 3) {
-            var timeParts = parts[1].split(' --> ');
-            if(timeParts.length === 2) {
-                var textParts = [];
-                for(var j = 2; j < parts.length; j++) {
-                    textParts.push(parts[j].trim());
-                }
-                lyricsArray.push({
-                    start: toSec(timeParts[0].trim()),
-                    end: toSec(timeParts[1].trim()),
-                    text: textParts.join(' ')
-                });
-            }
-        }
-    }
-
-    // التشغيل والتحكم
     var audio = document.getElementById('audio-player');
     var textDiv = document.getElementById('lyrics-text');
+    var srtData = document.getElementById('srt-data').value;
     var startBtn = document.getElementById('start-btn');
     var overlay = document.getElementById('overlay');
     var isStarted = false;
 
-    function openFullscreen() {
-        var elem = document.documentElement;
-        if (elem.requestFullscreen) { elem.requestFullscreen(); } 
-        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+    function parseSRT(data) {
+        var lyrics = [];
+        var parts = data.trim().split('\n\n');
+        parts.forEach(function(part) {
+            var lines = part.split('\n');
+            if (lines.length >= 3) {
+                var timeRange = lines[1].split(' --> ');
+                var start = timeToSeconds(timeRange[0]);
+                var end = timeToSeconds(timeRange[1]);
+                var text = lines.slice(2).join(' ');
+                lyrics.push({start: start, end: end, text: text});
+            }
+        });
+        return lyrics;
     }
+
+    function timeToSeconds(timeStr) {
+        var parts = timeStr.split(':');
+        var secParts = parts[2].split(',');
+        return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(secParts[0]) + parseInt(secParts[1]) / 1000;
+    }
+
+    var lyricsArray = parseSRT(srtData);
 
     function startApp() {
         if (isStarted) return;
         isStarted = true;
-        openFullscreen();
         overlay.style.display = 'none';
+        
+        // محاولة طلب الشاشة الكاملة لمتصفحات التلفزيون
+        var elem = document.documentElement;
+        if (elem.requestFullscreen) { elem.requestFullscreen(); }
+        
         audio.play();
     }
 
     startBtn.onclick = startApp;
 
+    // دعم أزرار التحكم عن بعد (Remote Control)
     document.addEventListener('keydown', function(event) {
-        if (event.keyCode === 13) { startApp(); }
+        if (event.keyCode === 13 || event.key === "Enter") {
+            if (!isStarted) {
+                startApp();
+            } else {
+                if (audio.paused) audio.play(); else audio.pause();
+            }
+        }
     });
 
-    // مزامنة النص مع الصوت 
-    // لغيت تأثير الاختفاء البطيء حتى الكلمات السريعة تظهر مباشرة بدون تقطيع
     audio.ontimeupdate = function() {
         var currentTime = audio.currentTime;
         var activeText = "";
@@ -5068,15 +5113,9 @@
             }
         }
 
-        // تحديث النص فوراً 
         if (activeText !== "" && textDiv.innerText !== activeText) {
             textDiv.innerText = activeText;
         }
-    };
-
-    window.onload = function() {
-        startBtn.focus();
-        startBtn.classList.add('active-focus');
     };
 </script>
 
